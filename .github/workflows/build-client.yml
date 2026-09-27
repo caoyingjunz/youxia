@@ -1,0 +1,74 @@
+# 同时触发 Windows + macOS 客户端打包（手动）
+name: Build Client Installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "要打包的平台"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
+
+concurrency:
+  group: build-client-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    if: inputs.platform == 'all' || inputs.platform == 'windows'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - name: Build Windows installers
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Youxia-Windows-${{ github.sha }}
+          path: |
+            client/release/Youxia-Setup-*.exe
+            client/release/Youxia-Setup-*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  macos:
+    if: inputs.platform == 'all' || inputs.platform == 'mac'
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - name: Build macOS installers
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Youxia-macOS-${{ github.sha }}
+          path: |
+            client/release/Youxia-*.dmg
+            client/release/Youxia-*.zip
+          if-no-files-found: error
+          retention-days: 14

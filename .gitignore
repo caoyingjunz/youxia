@@ -2,17 +2,49 @@
 node_modules/
 **/node_modules/
 
-# Frontend / Electron build outputs
-dist/
-**/dist/
+# Frontend / Vite
 web/dist/
 client/dist/
+*.tsbuildinfo
+.vite/
+**/.vite/
+.turbo/
+
+# Electron / electron-builder outputs
+dist/
+**/dist/
 client/release/
+**/release/
+win-unpacked/
+mac/
+mac-arm64/
+linux-unpacked/
+
+# Installer / package artifacts (Windows + macOS)
+Youxi-Setup-*
+Youxia-Setup-*
+Youxia-*.dmg
+Youxia-*.zip
+Youxia-*.exe
+Youxia-*.blockmap
 *.exe
 *.dmg
+*.pkg
 *.AppImage
+*.deb
+*.rpm
+*.snap
 *.blockmap
 *.nsis.7z
+*.zip
+!package-lock.json
+!**/package-lock.json
+
+# electron-builder generated metadata
+builder-debug.yml
+builder-effective-config.yaml
+**/builder-debug.yml
+**/builder-effective-config.yaml
 
 # Electron / electron-builder caches
 .cache/
@@ -39,11 +71,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# TypeScript / Vite
-*.tsbuildinfo
-.vite/
-.turbo/
-
 # Go
 bin/
 *.test
@@ -54,7 +81,10 @@ vendor/
 
 # OS
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+Desktop.ini
 
 # IDE / editor
 .idea/
@@ -65,9 +95,10 @@ Thumbs.db
 .project
 .settings/
 
-# Misc
+# Misc local / archives
 *.local
 .temp/
 .tmp/
 youxi.zip
 youxia.zip
+*.tar.gz

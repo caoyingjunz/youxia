@@ -9,6 +9,7 @@
     "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "build": "vite build",
     "dist:win": "vite build && electron-builder --win nsis zip --x64",
+    "dist:mac": "vite build && electron-builder --mac dmg zip --arm64 --x64",
     "preview": "vite preview"
   },
   "build": {
@@ -48,6 +49,27 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "游侠"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "artifactName": "Youxia-${version}-${arch}.${ext}",
+      "category": "public.app-category.games",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null
+    },
+    "dmg": {
+      "title": "游侠 ${version}",
+      "writeUpdateInfo": false
     }
   },
   "dependencies": {

@@ -1,4 +1,11 @@
-const DOWNLOAD_URL = import.meta.env.VITE_DOWNLOAD_URL || '/downloads/Youxia-Setup-0.1.0.exe';
+const WIN_DOWNLOAD =
+  import.meta.env.VITE_DOWNLOAD_URL_WIN ||
+  import.meta.env.VITE_DOWNLOAD_URL ||
+  '/downloads/Youxia-Setup-0.1.0.exe';
+const MAC_ARM_DOWNLOAD =
+  import.meta.env.VITE_DOWNLOAD_URL_MAC_ARM || '/downloads/Youxia-0.1.0-arm64.dmg';
+const MAC_X64_DOWNLOAD =
+  import.meta.env.VITE_DOWNLOAD_URL_MAC_X64 || '/downloads/Youxia-0.1.0-x64.dmg';
 
 export default function App() {
   return (
@@ -19,11 +26,18 @@ export default function App() {
           <p className="lead">
             联网匹配 / 本地 USB 街机杆 / 实时开房
             <br />
-            安装 Windows 客户端，登录即可开战
+            支持 Windows 与 macOS，登录即可开战
           </p>
           <div className="cta" id="download">
-            <a className="btn" href={DOWNLOAD_URL}>立即下载</a>
-            <a className="btn ghost" href="#features">了解功能</a>
+            <a className="btn" href={WIN_DOWNLOAD}>
+              Windows 下载
+            </a>
+            <a className="btn" href={MAC_ARM_DOWNLOAD}>
+              macOS Apple 芯片
+            </a>
+            <a className="btn ghost" href={MAC_X64_DOWNLOAD}>
+              macOS Intel
+            </a>
           </div>
         </div>
         <div className="hero-visual" aria-hidden>
@@ -49,11 +63,11 @@ export default function App() {
           </article>
           <article>
             <h3>USB 街机杆</h3>
-            <p>支持常见 XInput / DInput USB 摇杆，插入即可测键。</p>
+            <p>支持常见 USB 摇杆；Windows 走 XInput/DInput，macOS 走 HID。</p>
           </article>
           <article>
-            <h3>Windows 安装包</h3>
-            <p>NSIS 安装向导，装完登录大厅选游戏开玩。</p>
+            <h3>双端安装包</h3>
+            <p>Windows NSIS 安装包与 macOS DMG，装完登录大厅选游戏开玩。</p>
           </article>
         </div>
       </section>

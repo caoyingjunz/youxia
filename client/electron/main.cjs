@@ -76,7 +76,10 @@ ipcMain.handle('gamepad:list', async () => {
   // Renderer polls navigator.getGamepads; main process returns last known OS hint.
   return {
     platform: process.platform,
-    hint: '插入 USB 街机杆后打开「手柄」页查看；RetroArch 将直接读取 XInput/DInput 设备。',
+    hint:
+      process.platform === 'darwin'
+        ? '插入 USB 街机杆后打开「手柄」页查看；macOS 上 RetroArch 通过 HID 读取手柄（部分摇杆需安装驱动）。'
+        : '插入 USB 街机杆后打开「手柄」页查看；RetroArch 将直接读取 XInput/DInput 设备。',
   };
 });
 
@@ -91,7 +94,8 @@ function resolveCorePath(coresPath, coreName) {
     const p = path.join(coresPath, coreName.endsWith(ext) ? coreName : `${coreName}${ext}`);
     if (fs.existsSync(p)) return p;
   }
-  return path.join(coresPath, process.platform === 'win32' ? `${coreName}.dll` : `${coreName}.so`);
+  const fallbackExt = process.platform === 'win32' ? '.dll' : process.platform === 'darwin' ? '.dylib' : '.so';
+  return path.join(coresPath, `${coreName}${fallbackExt}`);
 }
 
 function buildArgs({ core, romPath, mode, hostAddr, hostPort, configPath }) {

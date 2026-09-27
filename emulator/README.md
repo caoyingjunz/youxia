@@ -22,7 +22,8 @@ Guest:
 retroarch -L <core> <rom> --connect <host_ip> --port 55435
 ```
 
-客户端在匹配成功后由主进程拼装上述参数；USB 街机杆由 RetroArch 直接读取，无需额外驱动映射（XInput 优先）。
+客户端在匹配成功后由主进程拼装上述参数；USB 街机杆由 RetroArch 直接读取。
+Windows 优先 XInput/DInput；macOS 走 HID（个别摇杆可能需要额外驱动）。
 
 ## Config template
 
