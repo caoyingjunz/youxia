@@ -1,0 +1,69 @@
+{
+  "name": "youxia-client",
+  "version": "0.1.0",
+  "description": "游侠 — 街机联网对战客户端",
+  "main": "electron/main.cjs",
+  "author": "游侠",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "build": "vite build",
+    "dist:win": "vite build && electron-builder --win nsis zip --x64",
+    "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.youxia.arcade",
+    "productName": "游侠",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../emulator",
+        "to": "emulator",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "Youxia-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "游侠"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.0.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "wait-on": "^8.0.1"
+  }
+}
