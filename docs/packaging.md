@@ -40,13 +40,14 @@ chmod +x scripts/fetch-runtime.sh
 
 ## GitHub Actions（推荐）
 
-仓库已配置三个 workflow：
+仓库已配置四个 workflow：
 
 | Workflow | 触发 | 说明 |
 |----------|------|------|
 | **Build Client Installers** | 手动（Actions → Run workflow） | 可选 `all` / `windows` / `mac`，一次触发双端或单端 |
 | **Build Windows Installer** | 手动；或变更 `client/**`、`emulator/**` 时 push/PR | Windows NSIS + zip |
 | **Build macOS Installer** | 手动；或变更 `client/**`、`emulator/**` 时 push/PR | macOS DMG + zip（arm64 + x64，未签名） |
+| **Release Client Installers** | push tag `v*`；或手动（填 tag） | macOS 双架构 + Windows 安装包自动附加到该 tag 的 Release |
 
 ### 使用步骤
 
@@ -59,6 +60,32 @@ chmod +x scripts/fetch-runtime.sh
 5. Artifact 默认保留 **14 天**
 
 > macOS CI 包默认 **未签名 / 未公证**。用户本机首次打开可能被 Gatekeeper 拦截：右键 App → 打开，或在「系统设置 → 隐私与安全性」中允许。
+
+---
+
+## 版本发布（GitHub Release）
+
+正式发版打 tag 触发（`.github/workflows/release.yml`）：
+
+```bash
+# 1. 更新 client/package.json 的 version 字段
+# 2. 提交改动
+git commit -am "chore: bump version to 0.x.y"
+# 3. 打 tag 并推送
+git tag -a v0.x.y -m "Youxia v0.x.y"
+git push origin master v0.x.y
+```
+
+推送后 Actions 并行构建 macOS（arm64 + x64，DMG/zip）与 Windows（NSIS exe/zip），完成后自动附加到该 tag 的 Release 页：
+
+`https://github.com/caoyingjunz/youxia/releases/tag/v0.x.y`
+
+| 要点 | 说明 |
+|------|------|
+| 产物保留 | Release 产物永久保留，公开仓库免登录下载 |
+| Release notes | 由 commit 历史自动生成（`generate_release_notes`） |
+| 重发同一版本 | Actions → Release Client Installers → Run workflow，填入已有 tag |
+| macOS 首开 | 包未签名，Gatekeeper 拦截时右键 App → 打开 |
 
 ---
 
