@@ -33,10 +33,19 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
       - run: npm ci
+      - name: Install 7zip
+        working-directory: .
+        run: choco install 7zip -y
+      - name: Fetch RetroArch runtime
+        working-directory: .
+        shell: bash
+        run: |
+          chmod +x scripts/fetch-runtime.sh
+          ./scripts/fetch-runtime.sh win32-x64
       - name: Build Windows installers
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist:win
+        run: npm run build && npx electron-builder --win nsis zip --x64
       - uses: actions/upload-artifact@v4
         with:
           name: Youxia-Windows-${{ github.sha }}
@@ -60,10 +69,16 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
       - run: npm ci
+      - name: Fetch RetroArch runtime (arm64 + x64)
+        working-directory: .
+        run: |
+          chmod +x scripts/fetch-runtime.sh
+          ./scripts/fetch-runtime.sh darwin-arm64
+          ./scripts/fetch-runtime.sh darwin-x64
       - name: Build macOS installers
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist:mac
+        run: npm run build && npx electron-builder --mac dmg zip --arm64 --x64
       - uses: actions/upload-artifact@v4
         with:
           name: Youxia-macOS-${{ github.sha }}

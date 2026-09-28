@@ -35,11 +35,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build macOS installers (DMG + zip, arm64/x64, unsigned)
+      - name: Fetch bundled RetroArch + FBNeo (arm64 + x64)
+        working-directory: .
+        run: |
+          chmod +x scripts/fetch-runtime.sh
+          ./scripts/fetch-runtime.sh darwin-arm64
+          ./scripts/fetch-runtime.sh darwin-x64
+
+      - name: Build macOS installers (DMG + zip, unsigned)
         env:
           # 无 Apple Developer 证书时跳过签名，便于 CI 产出 demo 包
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist:mac
+        # 跳过 package.json 里的 fetch（已在上一步完成双架构）
+        run: npm run build && npx electron-builder --mac dmg zip --arm64 --x64
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

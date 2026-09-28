@@ -4,6 +4,12 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const Store = require('electron-store');
+const {
+  expandHome,
+  resolveBundledRuntime,
+  applyRuntimeDefaults,
+} = require('./runtime.cjs');
+const { locateRom, locateMany, downloadRom } = require('./roms.cjs');
 
 const store = new Store({
   name: 'youxia-settings',
@@ -12,6 +18,8 @@ const store = new Store({
     retroarchPath: '',
     coresPath: '',
     romsPath: '',
+    romSourceBaseUrl: '',
+    romSearchPaths: [],
     netplayPort: 55435,
     token: '',
     username: '',
@@ -44,7 +52,10 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  applyRuntimeDefaults(store);
+  createWindow();
+});
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
@@ -52,10 +63,19 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-ipcMain.handle('settings:get', () => store.store);
+ipcMain.handle('settings:get', () => {
+  applyRuntimeDefaults(store);
+  return {
+    ...store.store,
+    bundledRuntime: resolveBundledRuntime(),
+  };
+});
 ipcMain.handle('settings:set', (_e, patch) => {
   Object.entries(patch || {}).forEach(([k, v]) => store.set(k, v));
-  return store.store;
+  return {
+    ...store.store,
+    bundledRuntime: resolveBundledRuntime(),
+  };
 });
 
 ipcMain.handle('auth:setSession', (_e, { token, username }) => {
@@ -72,24 +92,27 @@ ipcMain.handle('auth:clearSession', () => {
 
 ipcMain.handle('shell:openExternal', (_e, url) => shell.openExternal(url));
 
-ipcMain.handle('gamepad:list', async () => {
-  // Renderer polls navigator.getGamepads; main process returns last known OS hint.
-  return {
-    platform: process.platform,
-    hint:
-      process.platform === 'darwin'
-        ? '插入 USB 街机杆后打开「手柄」页查看；macOS 上 RetroArch 通过 HID 读取手柄（部分摇杆需安装驱动）。'
-        : '插入 USB 街机杆后打开「手柄」页查看；RetroArch 将直接读取 XInput/DInput 设备。',
-  };
-});
+ipcMain.handle('gamepad:list', async () => ({
+  platform: process.platform,
+  hint:
+    process.platform === 'darwin'
+      ? '插入 USB 街机杆后打开「手柄」页查看；macOS 上 RetroArch 通过 HID 读取手柄（部分摇杆需安装驱动）。'
+      : '插入 USB 街机杆后打开「手柄」页查看；RetroArch 将直接读取 XInput/DInput 设备。',
+}));
+
+ipcMain.handle('runtime:status', () => resolveBundledRuntime());
+
+ipcMain.handle('rom:locate', (_e, romHint) => locateRom(romHint, store.store));
+ipcMain.handle('rom:locateMany', (_e, romHints) => locateMany(romHints, store.store));
+ipcMain.handle('rom:download', async (_e, romHint) => downloadRom(romHint, store.store));
 
 function resolveCorePath(coresPath, coreName) {
+  coresPath = expandHome(coresPath);
   const exts = process.platform === 'win32' ? ['.dll'] : process.platform === 'darwin' ? ['.dylib'] : ['.so'];
   for (const ext of exts) {
     const p = path.join(coresPath, `${coreName}${ext}`);
     if (fs.existsSync(p)) return p;
   }
-  // Try with _libretro already in name
   for (const ext of exts) {
     const p = path.join(coresPath, coreName.endsWith(ext) ? coreName : `${coreName}${ext}`);
     if (fs.existsSync(p)) return p;
@@ -113,24 +136,43 @@ function buildArgs({ core, romPath, mode, hostAddr, hostPort, configPath }) {
   return args;
 }
 
-ipcMain.handle('emulator:launch', async (_e, opts) => {
+function resolveLaunchPaths(opts) {
   const settings = store.store;
-  const retroarch = opts.retroarchPath || settings.retroarchPath;
-  const coresPath = opts.coresPath || settings.coresPath;
-  const romsPath = opts.romsPath || settings.romsPath;
+  const bundled = resolveBundledRuntime();
+  const retroarch =
+    expandHome(opts.retroarchPath || settings.retroarchPath) || bundled.retroarchPath;
+  const coresPath = expandHome(opts.coresPath || settings.coresPath) || bundled.coresPath;
+  const romsPath = expandHome(opts.romsPath || settings.romsPath);
+  return { retroarch, coresPath, romsPath, bundled };
+}
+
+ipcMain.handle('emulator:launch', async (_e, opts) => {
+  const { retroarch, coresPath, romsPath } = resolveLaunchPaths(opts || {});
   if (!retroarch || !fs.existsSync(retroarch)) {
-    throw new Error('未找到 RetroArch，请在设置中填写可执行文件路径');
+    throw new Error(
+      '未找到 RetroArch。请运行 scripts/fetch-runtime.sh 拉取内置运行时，或在设置中填写可执行文件路径。',
+    );
   }
-  if (!coresPath) throw new Error('请设置 cores 目录');
+  if (!coresPath) throw new Error('请设置 cores 目录（或安装内置运行时）');
   if (!romsPath) throw new Error('请设置 ROM 目录');
 
   const romFile = opts.romHint || `${opts.gameId}.zip`;
-  const romPath = path.join(romsPath, romFile);
+  let romPath = path.join(romsPath, romFile);
   if (!fs.existsSync(romPath)) {
-    throw new Error(`未找到 ROM：${romPath}（请自备合法 ROM，本平台不分发）`);
+    const located = locateRom(romFile, store.store);
+    if (located.found) romPath = located.path;
+  }
+  if (!fs.existsSync(romPath)) {
+    throw new Error(
+      `未找到 ROM：${romFile}。可在游戏列表点「搜索」扫描本机，或配置合法镜像后「下载」。`,
+    );
   }
 
   const core = resolveCorePath(coresPath, opts.core || 'fbneo_libretro');
+  if (!fs.existsSync(core)) {
+    throw new Error(`未找到核心：${core}（请执行 scripts/fetch-runtime.sh）`);
+  }
+
   let configPath = path.join(__dirname, '..', '..', 'emulator', 'retroarch-youxia.cfg');
   if (app.isPackaged) {
     configPath = path.join(process.resourcesPath, 'emulator', 'retroarch-youxia.cfg');
@@ -141,7 +183,7 @@ ipcMain.handle('emulator:launch', async (_e, opts) => {
     romPath,
     mode: opts.mode || 'local',
     hostAddr: opts.hostAddr,
-    hostPort: opts.hostPort || settings.netplayPort || 55435,
+    hostPort: opts.hostPort || store.store.netplayPort || 55435,
     configPath,
   });
 
@@ -166,6 +208,7 @@ ipcMain.handle('emulator:launch', async (_e, opts) => {
   return {
     pid: gameProcess.pid,
     args,
+    romPath,
     localAddresses: getLocalIPv4(),
   };
 });

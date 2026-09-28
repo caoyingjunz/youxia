@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('youxia', {
   gamepadHint: () => ipcRenderer.invoke('gamepad:list'),
   launchEmulator: (opts) => ipcRenderer.invoke('emulator:launch', opts),
   stopEmulator: () => ipcRenderer.invoke('emulator:stop'),
+  runtimeStatus: () => ipcRenderer.invoke('runtime:status'),
+  locateRom: (romHint) => ipcRenderer.invoke('rom:locate', romHint),
+  locateRoms: (romHints) => ipcRenderer.invoke('rom:locateMany', romHints),
+  downloadRom: (romHint) => ipcRenderer.invoke('rom:download', romHint),
   onEmulatorExited: (cb) => {
     const handler = () => cb();
     ipcRenderer.on('emulator:exited', handler);

@@ -56,6 +56,9 @@ npm run dev
 ### 本地速查
 
 ```bash
+# 开发前拉取内置 RetroArch + FBNeo（仓库根目录）
+chmod +x scripts/fetch-runtime.sh && ./scripts/fetch-runtime.sh
+
 cd client
 export CSC_IDENTITY_AUTO_DISCOVERY=false
 # 可选（国内镜像）：
@@ -65,6 +68,8 @@ export CSC_IDENTITY_AUTO_DISCOVERY=false
 npm run dist:win   # 需在 Windows 上执行 → release/Youxia-Setup-*.exe / .zip
 npm run dist:mac   # 需在 macOS 上执行 → release/Youxia-*-arm64|x64.dmg / .zip
 ```
+
+ROM：放到 `~/YouxiaRoms`（或设置中的目录）后在游戏页点「搜索本机 ROM」；若运营配置了合法 HTTPS 镜像，可在卡片上「下载」。
 
 ### GitHub Actions
 

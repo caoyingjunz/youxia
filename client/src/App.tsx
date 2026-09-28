@@ -172,6 +172,8 @@ export default function App() {
         {tab === 'games' && (
           <GamesPage
             games={games}
+            onStatus={setStatus}
+            onError={setError}
             onPlay={async (g) => {
               try {
                 setError('');

@@ -14,6 +14,28 @@
 
 `version` 来自 `client/package.json` 的 `version` 字段（当前 `0.1.0`）。
 
+安装包会通过 `scripts/fetch-runtime.sh` **内置 RetroArch + FBNeo 核心**（GPL）。商业 ROM **不会**打进包内。
+
+### 开发环境拉取运行时
+
+```bash
+# 仓库根目录
+chmod +x scripts/fetch-runtime.sh
+./scripts/fetch-runtime.sh          # 当前 Mac/平台
+./scripts/fetch-runtime.sh all      # 全平台（体积大）
+```
+
+客户端启动后「设置」可一键「使用内置 RetroArch / cores」。默认 ROM 目录为 `~/YouxiaRoms`。
+
+### ROM 搜索与下载
+
+| 能力 | 说明 |
+|------|------|
+| 本机搜索 | 游戏页「搜索本机 ROM」，扫描 ROM 目录、`~/roms` 等常见路径 |
+| 镜像下载 | 设置里填写 `romSourceBaseUrl`（必须 HTTPS），请求 `{base}{romHint}`；由运营方自建合法源，客户端不内置盗版站 |
+
+示例：`romSourceBaseUrl = https://roms.example.com/arcade/` → 下载 `https://roms.example.com/arcade/kof97.zip`。
+
 ---
 
 ## GitHub Actions（推荐）

@@ -8,8 +8,11 @@
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "build": "vite build",
-    "dist:win": "vite build && electron-builder --win nsis zip --x64",
-    "dist:mac": "vite build && electron-builder --mac dmg zip --arm64 --x64",
+    "fetch-runtime": "bash ../scripts/fetch-runtime.sh",
+    "fetch-runtime:win": "bash ../scripts/fetch-runtime.sh win32-x64",
+    "fetch-runtime:mac": "bash ../scripts/fetch-runtime.sh all",
+    "dist:win": "npm run fetch-runtime:win && vite build && electron-builder --win nsis zip --x64",
+    "dist:mac": "bash ../scripts/fetch-runtime.sh darwin-arm64 && bash ../scripts/fetch-runtime.sh darwin-x64 && vite build && electron-builder --mac dmg zip --arm64 --x64",
     "preview": "vite preview"
   },
   "build": {
