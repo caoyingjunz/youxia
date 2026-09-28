@@ -145,7 +145,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand">游<span>匣</span></div>
+        <div className="brand">游<span>侠</span></div>
         <div className="muted" style={{ fontSize: '0.85rem' }}>@{username}</div>
         <nav className="nav">
           {(

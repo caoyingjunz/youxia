@@ -50,7 +50,7 @@ export default function GamesPage({ games, onPlay, onMatch, onStatus, onError }:
     }
   }
 
-  async function downloadOne(g: Game) {
+  async function downloadOne(g: Game): Promise<boolean> {
     setRoms((prev) => ({
       ...prev,
       [g.romHint]: { ...(prev[g.romHint] || { found: false, path: '' }), busy: true },
@@ -63,12 +63,29 @@ export default function GamesPage({ games, onPlay, onMatch, onStatus, onError }:
         [g.romHint]: { found: true, path: r.path, busy: false },
       }));
       onStatus?.(`已下载到 ${r.path}`);
+      return true;
     } catch (e) {
       setRoms((prev) => ({
         ...prev,
         [g.romHint]: { ...(prev[g.romHint] || { found: false, path: '' }), busy: false },
       }));
       onError?.(String((e as Error).message || e));
+      return false;
+    }
+  }
+
+  async function playOne(g: Game) {
+    if (!g.romHint) { onPlay(g); return; }
+    const [loc] = await window.youxia.locateRoms([g.romHint]);
+    if (loc?.found) { onPlay(g); return; }
+    if (hasSource) {
+      const ok = window.confirm(`「${g.title}」（${g.romHint}）尚未下载。是否从镜像下载并开始游戏？`);
+      if (!ok) return;
+      const okDl = await downloadOne(g);
+      if (okDl) onPlay(g);
+    } else {
+      const ok = window.confirm(`本机未找到「${g.romHint}」。是否搜索本机 ROM？\n（取消可到「设置」配置镜像下载源）`);
+      if (ok) void scanAll();
     }
   }
 
@@ -77,7 +94,7 @@ export default function GamesPage({ games, onPlay, onMatch, onStatus, onError }:
       <div className="panel">
         <h2>游戏列表</h2>
         <p className="muted">
-          本地/匹配开玩前需本机有对应 ROM。可「搜索本机」，或在设置配置合法 HTTPS 镜像后「下载」。
+          点「本地」直接开玩；ROM 未下载时会提示从镜像下载（镜像源在「设置」中配置），也可先「搜索本机」。
         </p>
         <div className="form-actions" style={{ marginTop: '0.75rem' }}>
           <button type="button" onClick={scanAll} disabled={scanning}>
@@ -100,7 +117,7 @@ export default function GamesPage({ games, onPlay, onMatch, onStatus, onError }:
                   {st?.found ? ' · 已找到' : ' · 未找到'}
                 </span>
                 <div className="game-actions">
-                  <button type="button" onClick={() => onPlay(g)}>
+                  <button type="button" onClick={() => playOne(g)} disabled={st?.busy}>
                     本地
                   </button>
                   <button type="button" className="secondary" onClick={() => onMatch(g)}>
