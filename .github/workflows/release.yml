@@ -1,0 +1,101 @@
+name: Release Client Installers
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要发布的版本 tag（如 v0.1.0）"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch bundled RetroArch + FBNeo (arm64 + x64)
+        working-directory: .
+        run: |
+          chmod +x scripts/fetch-runtime.sh
+          ./scripts/fetch-runtime.sh darwin-arm64
+          ./scripts/fetch-runtime.sh darwin-x64
+
+      - name: Build macOS installers (DMG + zip, unsigned)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run build && npx electron-builder --mac dmg zip --arm64 --x64
+
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: |
+            client/release/Youxia-*.dmg
+            client/release/Youxia-*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install 7zip
+        working-directory: .
+        run: choco install 7zip -y
+
+      - name: Fetch RetroArch runtime
+        working-directory: .
+        shell: bash
+        run: |
+          chmod +x scripts/fetch-runtime.sh
+          ./scripts/fetch-runtime.sh win32-x64
+
+      - name: Build Windows installers
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run build && npx electron-builder --win nsis zip --x64
+
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: |
+            client/release/Youxia-Setup-*.exe
+            client/release/Youxia-Setup-*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
