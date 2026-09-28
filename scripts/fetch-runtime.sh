@@ -36,34 +36,36 @@ fetch_core() {
 
 fetch_darwin() {
   local arch="$1" # arm64 | x64
-  local ra_arch="$arch"
-  [[ "$arch" == "x64" ]] && ra_arch="x86_64"
   local dest="$OUT/darwin-${arch}"
   mkdir -p "$dest/cores"
-  # RetroArch.app (universal dmg on newer builds; fall back to arch-specific zip if needed)
+  # stable 分发里 arm64 只有 universal 包（Metal 渲染），x64 用 x86_64 包
+  local dmg_rel="apple/osx/x86_64/RetroArch.dmg"
+  [[ "$arch" == "arm64" ]] && dmg_rel="apple/osx/universal/RetroArch_Metal.dmg"
   local dmg="$TMP/RetroArch.dmg"
-  if download "https://buildbot.libretro.com/stable/${STABLE}/apple/osx/${ra_arch}/RetroArch.dmg" "$dmg" 2>/dev/null; then
-    local mount
-    mount="$(hdiutil attach -nobrowse -readonly "$dmg" | awk '/\/Volumes\//{print $3; exit}')"
-    if [[ -z "${mount:-}" ]]; then
-      echo "无法挂载 RetroArch.dmg"
-      exit 1
-    fi
-    rm -rf "$dest/RetroArch.app"
-    cp -R "$mount/RetroArch.app" "$dest/RetroArch.app"
-    hdiutil detach "$mount" >/dev/null || true
-  else
-    echo "DMG 不可用，尝试 nightly .app.zip…"
-    local z="$TMP/RetroArch.zip"
-    download "https://buildbot.libretro.com/nightly/apple/osx/${ra_arch}/RetroArch_Metal.apple.app.zip" "$z" || \
-      download "https://buildbot.libretro.com/nightly/apple/osx/${ra_arch}/RetroArch.apple.app.zip" "$z"
-    rm -rf "$dest/RetroArch.app"
-    unzip -o -q "$z" -d "$TMP/appout"
-    local app
-    app="$(find "$TMP/appout" -maxdepth 3 -name 'RetroArch.app' -type d | head -1)"
-    [[ -n "$app" ]] || { echo "zip 内未找到 RetroArch.app"; exit 1; }
-    cp -R "$app" "$dest/RetroArch.app"
+  local url="https://buildbot.libretro.com/stable/${STABLE}/${dmg_rel}"
+  if ! download "$url" "$dmg"; then
+    echo "RetroArch 下载失败: $url"
+    exit 1
   fi
+  local mount
+  mount="$(hdiutil attach -nobrowse -readonly "$dmg" | awk '/\/Volumes\//{print $3; exit}')"
+  if [[ -z "${mount:-}" ]]; then
+    echo "无法挂载 RetroArch.dmg"
+    exit 1
+  fi
+  # 兼容 dmg 内 app 命名差异（如 RetroArch_Metal.app），取第一个 .app
+  local app
+  app="$(find "$mount" -maxdepth 2 -name '*.app' -type d | head -1)"
+  if [[ -z "$app" ]]; then
+    hdiutil detach "$mount" >/dev/null || true
+    echo "dmg 内未找到 *.app"
+    exit 1
+  fi
+  rm -rf "$dest/RetroArch.app"
+  cp -R "$app" "$dest/RetroArch.app"
+  hdiutil detach "$mount" >/dev/null || true
+  local ra_arch="$arch"
+  [[ "$arch" == "x64" ]] && ra_arch="x86_64"
   fetch_core "apple/osx/${ra_arch}" "fbneo_libretro.dylib" "$dest/cores"
   # 许可证摘录
   mkdir -p "$dest/licenses"

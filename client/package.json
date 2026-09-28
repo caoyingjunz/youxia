@@ -1,6 +1,6 @@
 {
   "name": "youxia-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "游侠 — 街机联网对战客户端",
   "main": "electron/main.cjs",
   "author": "游侠",

@@ -12,7 +12,7 @@
 | macOS Apple 芯片 | `npm run dist:mac` | `Youxia-<version>-arm64.dmg` / `.zip` |
 | macOS Intel | （同上一次打出） | `Youxia-<version>-x64.dmg` / `.zip` |
 
-`version` 来自 `client/package.json` 的 `version` 字段（当前 `0.1.0`）。
+`version` 来自 `client/package.json` 的 `version` 字段（当前 `0.1.1`）。
 
 安装包会通过 `scripts/fetch-runtime.sh` **内置 RetroArch + FBNeo 核心**（GPL）。商业 ROM **不会**打进包内。
 
@@ -133,8 +133,8 @@ npm run dist:win
 
 产物：
 
-- `release/Youxia-Setup-0.1.0.exe`
-- `release/Youxia-Setup-0.1.0.zip`
+- `release/Youxia-Setup-0.1.1.exe`
+- `release/Youxia-Setup-0.1.1.zip`
 
 > 不建议在 macOS 上交叉打 Windows 包（需额外 wine 等环境）；请用 Windows 本机或 GitHub Actions。
 
@@ -148,8 +148,8 @@ npm run dist:mac
 
 产物：
 
-- `release/Youxia-0.1.0-arm64.dmg` / `.zip`
-- `release/Youxia-0.1.0-x64.dmg` / `.zip`
+- `release/Youxia-0.1.1-arm64.dmg` / `.zip`
+- `release/Youxia-0.1.1-x64.dmg` / `.zip`
 
 未配置 Apple Developer 证书时，`package.json` 中 `mac.identity` 为 `null`，生成未签名包，便于本地 demo。
 
